@@ -1,0 +1,11 @@
+{
+    "OPENAI_NAME": "",
+    "OPENAI_KEY": "",
+    "OPENAI_MODEL": "gpt-35-turbo",
+    "OPENAI_API_VERSION": "2023-06-01-preview",
+    "OPENAI_SYSTEM_MESSAGE": "あなたは音声認識で入力された文章を要約するスペシャリストです。",
+    "OPENAI_MAX_TOKEN": 3000,
+    "OPENAI_TEMPERATURE": 0,
+    "SPEECH_SERVICE_REGION": "",
+    "SPEECH_SERVICE_KEY": ""
+}
