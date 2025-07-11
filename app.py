@@ -1,51 +1,58 @@
+from flask import Flask, request
 import os
 import requests
-import openai
-from flask import Flask, request, jsonify
+from dotenv import load_dotenv
+from utils.openai import AzureOpenAIClient
 
-OPENAI_NAME = os.environ.get("OPENAI_NAME")
-OPENAI_KEY = os.environ.get("OPENAI_KEY")
-OPENAI_MODEL = os.environ.get("OPENAI_MODEL")
-OPENAI_API_VERSION = os.environ.get("OPENAI_API_VERSION")
-OPENAI_SYSTEM_MESSAGE = os.environ.get("OPENAI_SYSTEM_MESSAGE", "You are an AI assistant that helps people find information.")
-OPENAI_MAX_TOKEN = int(os.environ.get("OPENAI_MAX_TOKEN", 3000))
-OPENAI_TEMPERATURE = int(os.environ.get("OPENAI_TEMPERATURE", 0))
+# .env ファイルから環境変数を読み込む
+load_dotenv()
+AZURE_OPENAI_DEPLOYMENT = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4.1-nano")
 SPEECH_SERVICE_REGION = os.environ.get("SPEECH_SERVICE_REGION")
 SPEECH_SERVICE_KEY = os.environ.get("SPEECH_SERVICE_KEY")
 
-openai.api_type = "azure"
-openai.api_base = f"https://{OPENAI_NAME}.openai.azure.com/" 
-openai.api_version = OPENAI_API_VERSION
-openai.api_key = OPENAI_KEY
+# Azure OpenAI Service で使用するシステムメッセージの定義
+SYSTEM_MESSAGE = """
+リアルタイムで音声を文字起こしした内容を箇条書きで要約してください
+要約した内容を以下の JSON 形式で返してください：
+{
+    "summary": str // 要約した内容
+}
+"""
 
+# Azure OpenAI Client のインスタンスを作成
+openai_client = AzureOpenAIClient()
+
+# Flask アプリケーションのインスタンスを作成
 app = Flask(__name__)
 
+
+# 静的ファイルのルーティング
 @app.route("/", defaults={"path": "index.html"})
 @app.route("/<path:path>")
 def static_file(path):
     return app.send_static_file(path)
 
-@app.route("/token", methods=["GET"])
+
+# Azure Speech Service の一時利用トークンを発行する Web API
+@app.route("/api/token", methods=["GET"])
 def publish_speech_service_token():
     url = f"https://{SPEECH_SERVICE_REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken"
-    headers = { "Ocp-Apim-Subscription-Key": SPEECH_SERVICE_KEY }
+    headers = {"Ocp-Apim-Subscription-Key": SPEECH_SERVICE_KEY}
     resp = requests.post(url, headers=headers)
-    return jsonify({ "token": resp.text, "region": SPEECH_SERVICE_REGION }), 200
+    return {"token": resp.text, "region": SPEECH_SERVICE_REGION}
 
-@app.route("/completion", methods=["POST"])
-def generate_completion():
-    prompt = request.json["prompt"]
-    resp = openai.ChatCompletion.create(
-        engine=OPENAI_MODEL,
-        messages=[
-            {"role": "system", "content": OPENAI_SYSTEM_MESSAGE},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=OPENAI_MAX_TOKEN,
-        temperature=OPENAI_TEMPERATURE
+
+# 入力した音声の文字書き起こし内容を要約する Web API
+@app.route("/api/modify", methods=["POST"])
+def modify_text_api():
+    return openai_client.get_response(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        system_message=SYSTEM_MESSAGE,
+        user_message=request.json["text"],
+        json_mode=True,
     )
-    completion = resp["choices"][0]["message"]["content"]
-    return jsonify({ "completion": completion }), 200
 
+
+# Flask アプリケーションを起動する
 if __name__ == "__main__":
     app.run()

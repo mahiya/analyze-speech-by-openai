@@ -1,11 +1,16 @@
 # リアルタイム音声認識＋要約のサンプルアプリ
 
-## 使い方
+## 必要なもの
+- Azure OpenAI Service のアカウント ([参考](https://learn.microsoft.com/ja-jp/azure/ai-foundry/openai/how-to/create-resource?pivots=web-portal))
+- Azure Speech Service のアカウント ([参考](https://learn.microsoft.com/ja-jp/azure/ai-services/multi-service-resource?pivots=azportal))
+- Python 実行環境 ([参考](https://www.python.org/downloads/), 3.11.9 で動作確認済み)
 
-[settings.json](./settings.json) の下記プロパティを設定します。
- -  ```OPENAI_NAME```: 使用する Azure OpenAI Service のアカウントの名前
- - ```OPENAI_KEY```: Azure OpenAI Service アカウントの認証キー
- - ```OPENAI_MODEL```: Azure OpenAI Service アカウントのモデルのデプロイメント名
+## ローカル環境の設定
+
+[.env](./.env) の下記プロパティを設定します。
+ - ```AZURE_OPENAI_ENDPOINT```: 使用する Azure OpenAI Service のエンドポイント
+ - ```AZURE_OPENAI_API_KEY```: Azure OpenAI Service アカウントの認証キー
+ - ```AZURE_OPENAI_DEPLOYMENT```: Azure OpenAI Service アカウントのモデルのデプロイメント名
  - ```SPEECH_SERVICE_REGION```: Azure Speech Service アカウントのリージョン名
  - ```SPEECH_SERVICE_KEY```: Azure Speech Service アカウントの認証キー
 
@@ -16,19 +21,12 @@
 pip install -r requirements.txt
 ```
 
-以下の通りに [localrun.sh](./localrun.sh) を実行して、Web アプリケーションを起動します。
+以下の通りに [app.py](./app.py) を実行して、Web アプリケーションを起動します。
 ```bash
-./localrun.sh
+python app.py
 ```
 
 ```http://127.0.0.1:5000``` を Web ブラウザで開くことで、アプリケーションを利用することができます。
 
 ![画面イメージ](.images/screenshot.png)
 
-## Azure へのデプロイ方法
-
-以下の通りに [deploy.sh](./deploy.sh) を実行して、Web アプリケーションを Azure へデプロイします。第一引数にはデプロイ先のリソースグループ名を指定する必要があります。
-```bash
-./deploy.sh {デプロイ先のリソースグループ名}
-# [例] ./deploy.sh rg-analyze-speech
-```
